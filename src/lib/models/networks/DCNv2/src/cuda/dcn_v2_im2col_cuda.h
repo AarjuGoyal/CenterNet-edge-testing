@@ -60,6 +60,7 @@
 
 /***************** Adapted by Charles Shang *********************/
 
+#include "../../../../../../../../../../../../usr/local/cuda-12.6/targets/aarch64-linux/include/driver_types.h"
 #ifndef DCN_V2_IM2COL_CUDA
 #define DCN_V2_IM2COL_CUDA
 

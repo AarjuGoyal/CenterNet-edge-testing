@@ -1,4 +1,5 @@
 #include "dcn_v2_im2col_cuda.h"
+#include <cuda_runtime.h> 
 #include <cstdio>
 #include <algorithm>
 #include <cstring>
