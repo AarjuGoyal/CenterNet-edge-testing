@@ -76,7 +76,7 @@ class DCNv2Function(Function):
                                       ctx.dilation, ctx.dilation,
                                       ctx.deformable_groups)
 
-        return grad_input, grad_offset, grad_mask, grad_weight, grad_bias
+        return grad_input, grad_offset, grad_mask, grad_weight, grad_bias, None, None, None, None
 
     @staticmethod
     def _infer_shape(ctx, input, weight):
