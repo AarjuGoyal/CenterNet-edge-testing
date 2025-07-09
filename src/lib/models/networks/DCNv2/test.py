@@ -12,6 +12,7 @@ from dcn_v2 import DCNv2
 from dcn_v2_func import DCNv2Function
 from dcn_v2 import DCNv2Pooling
 from dcn_v2_func import DCNv2PoolingFunction
+# import dcn_v2
 
 deformable_groups = 1
 N, inC, inH, inW = 2, 2, 4, 4

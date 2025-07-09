@@ -4,7 +4,7 @@ from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, _TORCH_PATH
 
 
-sources = ['src/dcn_v2.cpp']
+sources = ['src/dcn_v2.cpp', 'dcn_v2_wrapper.cpp']
 include_dirs=['src']
 library_dirs = ['src/cuda', 'build']
 defines = []
@@ -36,10 +36,10 @@ print(library_dirs)
 
 if with_cuda == True:
     setup(
-        name="dcn_v2",
+        name='dcn_v2_ext',
         ext_modules= [
             CUDAExtension(
-                name="dcn_v2",
+                name='dcn_v2_ext',
                 sources=sources,
                 include_dirs=include_dirs,
                 library_dirs=library_dirs,
@@ -86,8 +86,7 @@ else:
 
 # dcn_v2 = load(
 #     name='dcn_v2',
-#     sources=[
-#         'src/dcn_v2.cpp',
+#     sources=[pyt
 #         'src/dcn_v2_cuda.cu'
 #     ],
 #     extra_cflags=['-O2'],
