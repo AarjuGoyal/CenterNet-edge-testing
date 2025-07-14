@@ -25,9 +25,9 @@ int dcn_v2_cuda_backward(const at::Tensor &input,const at::Tensor &weight,
                           int dilation_h, int dilation_w,
                           int deformable_group);
 
-void dcn_v2_psroi_pooling_cuda_forward(at::Tensor * input, at::Tensor * bbox,
-                                       at::Tensor * trans, 
-                                       at::Tensor * out, at::Tensor * top_count,
+int dcn_v2_psroi_pooling_cuda_forward(at::Tensor &input, at::Tensor &bbox,
+                                       at::Tensor &trans, 
+                                       at::Tensor &out, at::Tensor &top_count,
                                        const int no_trans,
                                        const float spatial_scale,
                                        const int output_dim,
