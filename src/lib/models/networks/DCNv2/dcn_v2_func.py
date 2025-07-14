@@ -96,8 +96,22 @@ class DCNv2Function(Function):
 
 class DCNv2PoolingFunction(Function):
 
-    def __init__(self,
-                 spatial_scale,
+    def __init__(self):
+        super(DCNv2PoolingFunction, self).__init__()
+        # self.spatial_scale = spatial_scale
+        # self.pooled_size = pooled_size
+        # self.output_dim = output_dim
+        # self.no_trans = no_trans
+        # self.group_size = group_size
+        # self.part_size = pooled_size if part_size is None else part_size
+        # self.sample_per_part = sample_per_part
+        # self.trans_std = trans_std
+
+        # assert self.trans_std >= 0.0 and self.trans_std <= 1.
+
+    @staticmethod
+    def forward(ctx, data, rois, offset,
+                spatial_scale,
                  pooled_size,
                  output_dim,
                  no_trans,
@@ -105,41 +119,41 @@ class DCNv2PoolingFunction(Function):
                  part_size=None,
                  sample_per_part=4,
                  trans_std=.0):
-        super(DCNv2PoolingFunction, self).__init__()
-        self.spatial_scale = spatial_scale
-        self.pooled_size = pooled_size
-        self.output_dim = output_dim
-        self.no_trans = no_trans
-        self.group_size = group_size
-        self.part_size = pooled_size if part_size is None else part_size
-        self.sample_per_part = sample_per_part
-        self.trans_std = trans_std
-
-        assert self.trans_std >= 0.0 and self.trans_std <= 1.0
-
-    def forward(self, data, rois, offset):
+        
         if not data.is_cuda:
             raise NotImplementedError
 
-        output = data.new(*self._infer_shape(data, rois))
-        output_count = data.new(*self._infer_shape(data, rois))
+        ctx.spatial_scale = spatial_scale
+        ctx.pooled_size = pooled_size
+        ctx.output_dim = output_dim
+        ctx.no_trans = no_trans
+        ctx.group_size = group_size
+        ctx.part_size = pooled_size if part_size is None else part_size
+        ctx.sample_per_part = sample_per_part
+        ctx.trans_std = trans_std
+
+        assert ctx.trans_std >= 0.0 and ctx.trans_std <= 1.
+
+        output = data.new(*DCNv2PoolingFunction._infer_shape(ctx, data, rois))
+        output_count = data.new(*DCNv2PoolingFunction._infer_shape(ctx, data, rois))
         _backend.dcn_v2_psroi_pooling_cuda_forward(data, rois, offset,
                                                    output, output_count,
-                                                   self.no_trans, self.spatial_scale,
-                                                   self.output_dim, self.group_size,
-                                                   self.pooled_size, self.part_size,
-                                                   self.sample_per_part, self.trans_std)
+                                                   ctx.no_trans, ctx.spatial_scale,
+                                                   ctx.output_dim, ctx.group_size,
+                                                   ctx.pooled_size, ctx.part_size,
+                                                   ctx.sample_per_part, ctx.trans_std)
 
         if data.requires_grad or rois.requires_grad or offset.requires_grad:
-            self.save_for_backward(data, rois, offset, output_count)
+            ctx.save_for_backward(data, rois, offset, output_count)
 
         return output
 
-    def backward(self, grad_output):
+    @staticmethod
+    def backward(ctx, grad_output):
         if not grad_output.is_cuda:
             raise NotImplementedError
 
-        data, rois, offset, output_count = self.saved_tensors
+        data, rois, offset, output_count = ctx.saved_tensors
         grad_input = data.new(*data.size()).zero_()
         grad_offset = offset.new(*offset.size()).zero_()
 
@@ -150,18 +164,19 @@ class DCNv2PoolingFunction(Function):
                                                     output_count,
                                                     grad_input,
                                                     grad_offset,
-                                                    self.no_trans,
-                                                    self.spatial_scale,
-                                                    self.output_dim,
-                                                    self.group_size,
-                                                    self.pooled_size,
-                                                    self.part_size,
-                                                    self.sample_per_part,
-                                                    self.trans_std)
-        return grad_input, None, grad_offset
+                                                    ctx.no_trans,
+                                                    ctx.spatial_scale,
+                                                    ctx.output_dim,
+                                                    ctx.group_size,
+                                                    ctx.pooled_size,
+                                                    ctx.part_size,
+                                                    ctx.sample_per_part,
+                                                    ctx.trans_std)
+        return grad_input, None, grad_offset, None, None, None, None, None, None, None, None
 
-    def _infer_shape(self, data, rois):
+    @staticmethod
+    def _infer_shape(ctx, data, rois):
         # _, c, h, w = data.shape[:4]
         c = data.shape[1]
         n = rois.shape[0]
-        return (n, self.output_dim, self.pooled_size, self.pooled_size)
+        return (n, ctx.output_dim, ctx.pooled_size, ctx.pooled_size)

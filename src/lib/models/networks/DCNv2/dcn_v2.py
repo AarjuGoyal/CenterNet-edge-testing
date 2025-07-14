@@ -100,19 +100,19 @@ class DCNv2Pooling(nn.Module):
         self.part_size = pooled_size if part_size is None else part_size
         self.sample_per_part = sample_per_part
         self.trans_std = trans_std
-        self.func = DCNv2PoolingFunction(self.spatial_scale,
-                             self.pooled_size,
+        self.func = DCNv2PoolingFunction() ##self.func is created when creating the function
+
+    def forward(self, data, rois, offset):
+        if self.no_trans:
+            offset = data.new()
+        return self.func.apply(data, rois, offset, self.spatial_scale,
+                               self.pooled_size,
                              self.output_dim,
                              self.no_trans,
                              self.group_size,
                              self.part_size,
                              self.sample_per_part,
                              self.trans_std)
-
-    def forward(self, data, rois, offset):
-        if self.no_trans:
-            offset = data.new()
-        return self.func(data, rois, offset)
 
 class DCNPooling(DCNv2Pooling):
 
@@ -132,14 +132,7 @@ class DCNPooling(DCNv2Pooling):
         self.deform_fc_dim = deform_fc_dim
 
         if not no_trans:
-            self.func_offset = DCNv2PoolingFunction(self.spatial_scale,
-                                                    self.pooled_size,
-                                                    self.output_dim,
-                                                    True,
-                                                    self.group_size,
-                                                    self.part_size,
-                                                    self.sample_per_part,
-                                                    self.trans_std)
+            self.func_offset = DCNv2PoolingFunction() #created if no_trans False, same value
             self.offset_fc = nn.Sequential(
                 nn.Linear(self.pooled_size * self.pooled_size * self.output_dim, self.deform_fc_dim),
                 nn.ReLU(inplace=True),
@@ -164,11 +157,32 @@ class DCNPooling(DCNv2Pooling):
         else:
             n = rois.shape[0]
             offset = data.new()
-            x = self.func_offset(data, rois, offset)
+            x = self.func_offset.apply(data, rois, offset,self.spatial_scale,
+                                                    self.pooled_size,
+                                                    self.output_dim,
+                                                    True,
+                                                    self.group_size,
+                                                    self.part_size,
+                                                    self.sample_per_part,
+                                                    self.trans_std )
             offset = self.offset_fc(x.view(n, -1))
             offset = offset.view(n, 2, self.pooled_size, self.pooled_size)
             mask = self.mask_fc(x.view(n, -1))
             mask = mask.view(n, 1, self.pooled_size, self.pooled_size)
-            feat = self.func(data, rois, offset) * mask
+            feat = self.func.apply(data, rois, offset, self.spatial_scale,
+                             self.pooled_size,
+                             self.output_dim,
+                             self.no_trans,
+                             self.group_size,
+                             self.part_size,
+                             self.sample_per_part,
+                             self.trans_std) * mask
             return feat
-        return self.func(data, rois, offset)
+        return self.func.apply(data, rois, offset, data, rois, offset, self.spatial_scale,
+                             self.pooled_size,
+                             self.output_dim,
+                             self.no_trans,
+                             self.group_size,
+                             self.part_size,
+                             self.sample_per_part,
+                             self.trans_std)
