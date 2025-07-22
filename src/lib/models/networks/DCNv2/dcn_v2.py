@@ -31,10 +31,10 @@ class DCNv2(nn.Module):
         self.deformable_groups = deformable_groups
         
         self.weight = nn.Parameter(torch.Tensor(out_channels, in_channels, *self.kernel_size))
-        print("self weight shape is ", self.weight.shape)
+        # print("self weight shape is ", self.weight.shape)
         self.bias = nn.Parameter(torch.Tensor(out_channels))
         self.reset_parameters()
-        print("self weight shape after reset is ", self.weight.shape)
+        # print("self weight shape after reset is ", self.weight.shape)
 
     def reset_parameters(self):
         n = self.in_channels
@@ -76,7 +76,7 @@ class DCN(DCNv2):
         offset = torch.cat((o1, o2), dim=1)
         mask = torch.sigmoid(mask)
         func = DCNv2Function()
-        print("self weight in forward right before DCN func", self.weight.shape)
+        # print("self weight in forward right before DCN func", self.weight.shape)
         return func.apply(input, offset, mask, self.weight, self.bias, self.stride, self.padding, self.dilation, self.deformable_groups)
 
 

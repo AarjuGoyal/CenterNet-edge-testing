@@ -96,7 +96,7 @@ int dcn_v2_cuda_forward(const at::Tensor &input, const at::Tensor &weight,
         auto bias_mat = bias.view({k_, m_});
         auto bias_output = ones_mat.mm(bias_mat);                                                   // (n_ x 1) * (1 x m_) = (n_ x m_)
         output_n.copy_(bias_output.transpose(0, 1).resize_({channels_out, height_out, width_out})); // reshape({channels_out, height_out, width_out})); //ideallly the output of this should be channels_out * height_out * width_out
-        std::cout << "no problem with bias" << std::endl;
+       
         cudaStream_t stream;
         cudaError_t cudaErr = cudaStreamCreate(&stream);
         if (cudaErr != cudaSuccess)
@@ -128,16 +128,13 @@ int dcn_v2_cuda_forward(const at::Tensor &input, const at::Tensor &weight,
         // auto columns_mat = columns.view({mw_, kw_}); //m_ * k_
         // auto weights_mat = weight.view({kw_,nw_}); // k_ * n_
         auto weights_mat = weight.view({mw_, kw_});
-        std::cout << "weight mat is ok" << std::endl;
         auto columns_mat = columns.view({kw_, nw_});
-        std::cout << "columns mat is ok " << std::endl;
         auto output_mat = (weights_mat.mm(columns_mat)).view({channels_out, height_out, width_out});
-        std::cout << "no problem with matrix multiplication" << std::endl;
         output_n.add_(output_mat, 1.0);
         // output_n.addmm_(weights_mat, columns_mat, 1.0f, 1.0f);
 
         // output_n.resize_({channels_out, height_out, width_out}); //
-        std::cout << "no problem with wc";
+
         /*
         THCudaBlas_Sgemm(state, 'n', 'n', n, m, k, 1.0f,
                          THCudaTensor_data(state, columns), n, s
@@ -236,7 +233,6 @@ int dcn_v2_cuda_backward(const at::Tensor &input, const at::Tensor &weight,
         at::Tensor weight_mat = weight.view({k_, m_});
 
         columns.copy_(grad_output_mat.mm(weight_mat).transpose(0, 1)); //.matmul(grad_output_mat, weight_mat);
-        std::cout << "backward Columnds copy successful" << std::endl;
         // cublasSgemm(state, 'n', 't', n_, m_, k_, 1.0f,
         //                  grad_output_n.data_ptr<float>(), n_,
         //                  weight.data_ptr<float>(), m_, 0.0f,
@@ -308,10 +304,9 @@ int dcn_v2_cuda_backward(const at::Tensor &input, const at::Tensor &weight,
         auto columns_mat = columns.view({nw_, kw_});
         auto grad_output_n_mat = grad_output_n.view({kw_, mw_});
         auto grad_weight_inter = columns_mat.mm(grad_output_n_mat).transpose(0, 1);
-        std::cout << "grad weight inter successful " << std::endl;
         grad_weight.add_(grad_weight_inter.view({channels_out, channels, kernel_h, kernel_w}));
         // grad_weight.addmm_(columns_mat, grad_output_n_mat, 1.0f, 1.0f);
-        std::cout << "backward grad weight copy successful" << std::endl;
+
         // cublasSgemm(state, 't', 'n', n_, m_, k_, 1.0f,
         //                  columns.data(), k_,
         //                  grad_output_n.data(), k_, 1.0f,
@@ -365,7 +360,7 @@ int dcn_v2_psroi_pooling_cuda_forward(at::Tensor &input, at::Tensor &bbox,
                                        const int sample_per_part,
                                        const float trans_std)
 {
-    std::cout << "Function dcbn v2 psroi pooling cuda forward" << std::endl;
+    
     TORCH_CHECK(input.is_contiguous(), 1, "input tensor has to be contiguous");
     // THCAssertSameGPU(THCudaTensor_checkGPU(state, 5, input, bbox, trans, out, top_count));
 
@@ -376,7 +371,7 @@ int dcn_v2_psroi_pooling_cuda_forward(at::Tensor &input, at::Tensor &bbox,
     const int channels_trans = no_trans? 2 : trans.size(1);
 
     const int num_bbox = bbox.size(0);
-    std::cout<<"Num bbox size "<<num_bbox<<" out size "<<out.size(0)<<std::endl;
+    
     if (num_bbox != out.size(0))
         throw("Output shape and bbox number wont match: (%d vs %d).", 
                out.size(0), num_bbox);
@@ -384,17 +379,12 @@ int dcn_v2_psroi_pooling_cuda_forward(at::Tensor &input, at::Tensor &bbox,
     cudaStream_t stream1; //, stream2, stream3;
     cudaError_t cudaErr_stream1 = cudaStreamCreate(&stream1);
 
-    for (int i = 0; i < 1000; i++)
-        ;
-    std::cout << "Function dcbn v2 psroi pooling cuda stream creation " << std::endl;
-    std::cout << "Values of cudaErr_stream " << cudaErr_stream1 << std::endl;
     if (cudaErr_stream1 != cudaSuccess)
     {
         std::cout << " Cuda strea creation failed" << std::endl;
         std::cerr << "cudaStreamCreate failed: " << cudaGetErrorString(cudaErr_stream1) << std::endl;
         return 1;
     }
-    std::cout << "Running the PSROI Pool forward next" << std::endl;
 
     DeformablePSROIPoolForward(stream1,
                                input.data_ptr<float>(),

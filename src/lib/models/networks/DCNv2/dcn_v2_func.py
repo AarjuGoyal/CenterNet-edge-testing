@@ -29,7 +29,7 @@ class DCNv2Function(Function):
         ctx.deformable_groups = deformable_groups
         if weight.requires_grad or mask.requires_grad or offset.requires_grad or input.requires_grad:
             ctx.save_for_backward(input, offset, mask, weight, bias)
-        print("weight in forward method statis", weight.shape)
+        # print("weight in forward method statis", weight.shape)
         output = input.new(DCNv2Function._infer_shape(ctx, input, weight))
         ctx._bufs = [input.new(), input.new()]
         _backend.dcn_v2_cuda_forward(input, weight,
@@ -80,8 +80,8 @@ class DCNv2Function(Function):
 
     @staticmethod
     def _infer_shape(ctx, input, weight):
-        print("input shape is ", input.shape)
-        print("weight shape is ",weight.shape)
+        # print("input shape is ", input.shape)
+        # print("weight shape is ",weight.shape)
         n = input.size(0)
 
         channels_out = weight.size(0)
