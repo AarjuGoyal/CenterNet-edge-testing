@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 import os
 import pickle
 import numpy as np
+np.bool = np.bool_
 
 def parse_rec(filename):
   """ Parse a PASCAL VOC xml file """
